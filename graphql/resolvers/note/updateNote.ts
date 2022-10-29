@@ -10,7 +10,8 @@ type Params = {
   ReturnValues: string
 }
 
-async function updateNote(note: any) {
+async function updateNote(parent: any, args: any) {
+  const note = args.note;
   let params : Params = {
     TableName: process.env.NOTES_TABLE,
     Key: {

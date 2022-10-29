@@ -15,6 +15,7 @@ input NoteInput {
   id: ID!
   name: String!
   completed: Boolean!
+  userId: String!
 }
 
 input UpdateNoteInput {
@@ -26,6 +27,7 @@ input UpdateNoteInput {
 type Query {
   getNoteById(noteId: String!): Note
   listNotes: [Note]
+  listUsers: [User]
 }
 
 type Mutation {

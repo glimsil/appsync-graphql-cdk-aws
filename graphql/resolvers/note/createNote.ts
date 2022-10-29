@@ -1,8 +1,9 @@
 const AWS = require('aws-sdk');
 const docClient = new AWS.DynamoDB.DocumentClient();
-import Note from './Note';
+import NoteInput from './NoteInput';
 
-async function createNote(note: Note) {
+async function createNote(parent: any, args: any) {
+    const note: NoteInput = args.note;
     const params = {
         TableName: process.env.NOTES_TABLE,
         Item: note

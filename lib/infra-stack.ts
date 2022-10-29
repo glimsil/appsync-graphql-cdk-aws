@@ -9,8 +9,8 @@ export class InfraStack extends Stack {
 
   private notesGraphqlApi: GraphqlApi;
   private notesTable: Table;
-  private notesLambdaRole: Role;
-  private notesLambda: Function;
+  private resolverLambdaRole: Role;
+  private resolverLambda: Function;
   private notesLambdaDataSource: LambdaDataSource;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -18,8 +18,8 @@ export class InfraStack extends Stack {
 
     this.notesGraphqlApi = this.createGraphqlApi();
     this.notesTable = this.createNotesTable();
-    this.notesLambdaRole = this.createNotesLambdaRole();
-    this.notesLambda = this.createNotesLambda();
+    this.resolverLambdaRole = this.createResolverLambdaRole();
+    this.resolverLambda = this.createResolverLambda();
     this.notesLambdaDataSource = this.createLambdaDatasource();
 
     new CfnOutput(this, "GraphQLAPIURL", {
@@ -41,8 +41,8 @@ export class InfraStack extends Stack {
   }
 
   private createGraphqlApi(): GraphqlApi {
-    return new GraphqlApi(this, 'NotesApi', {
-      name: 'glimsil-NotesAppsyncGraphqlApi',
+    return new GraphqlApi(this, 'ResolverApi', {
+      name: 'glimsil-ResolverAppsyncGraphqlApi',
       schema: Schema.fromAsset('graphql/schema.graphql'),
       authorizationConfig: {
         defaultAuthorization: {
@@ -56,7 +56,7 @@ export class InfraStack extends Stack {
     });
   }
 
-  private createNotesLambdaRole(): Role {
+  private createResolverLambdaRole(): Role {
     // Policies to give lambda permissions to use DynamoDB NotesTable
     const accessDdb = new PolicyDocument({
       statements: [
@@ -79,15 +79,16 @@ export class InfraStack extends Stack {
       statements: [
         new PolicyStatement({
           actions: [
-              "cloudwatch:*"
+              "cloudwatch:*",
+              "logs:*"
           ],
-          resources: ["*"] // only notesTable
+          resources: ["*"]
         }),
       ],
     });
-    return new Role(this, `NotesLambdaRole`, {
-      roleName: 'NotesLambdaRole',
-      description: 'IAM role for NotesLambda',
+    return new Role(this, `ResolverLambdaRole`, {
+      roleName: 'ResolverLambdaRole',
+      description: 'IAM role for ResolverLambda',
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
       inlinePolicies: {
         AccessDdb: accessDdb, // add inline policy to IAM Role
@@ -96,12 +97,12 @@ export class InfraStack extends Stack {
     });
   }
 
-  private createNotesLambda(): Function {
-    return new Function(this, 'GraphqlNotesHandler', {
+  private createResolverLambda(): Function {
+    return new Function(this, 'GraphqlResolverHandler', {
       runtime: Runtime.NODEJS_14_X,
-      handler: 'notesLambda.handler',
+      handler: 'handler.handle',
       code: Code.fromAsset('graphql'),
-      role: this.notesLambdaRole,
+      role: this.resolverLambdaRole,
       environment: {
         'NOTES_TABLE': this.notesTable.tableName
       },
@@ -110,10 +111,20 @@ export class InfraStack extends Stack {
   }
 
   private createLambdaDatasource(): LambdaDataSource {
-    this.notesLambdaDataSource = this.notesGraphqlApi.addLambdaDataSource('NotesLambdaDatasource', this.notesLambda);
+    this.notesLambdaDataSource = this.notesGraphqlApi.addLambdaDataSource('ResolverLambdaDatasource', this.resolverLambda);
     this.notesLambdaDataSource.createResolver({
       typeName: "Query",
       fieldName: "getNoteById"
+    });
+
+    this.notesLambdaDataSource.createResolver({
+      typeName: "Query",
+      fieldName: "listNotes"
+    });
+
+    this.notesLambdaDataSource.createResolver({
+      typeName: "Query",
+      fieldName: "listUsers"
     });
 
     this.notesLambdaDataSource.createResolver({
@@ -124,11 +135,6 @@ export class InfraStack extends Stack {
     this.notesLambdaDataSource.createResolver({
       typeName: "User",
       fieldName: "randomText"
-    });
-    
-    this.notesLambdaDataSource.createResolver({
-      typeName: "Query",
-      fieldName: "listNotes"
     });
     
     this.notesLambdaDataSource.createResolver({
