@@ -56,6 +56,7 @@ mutation createNote {
     id: "0001"
     name: "My first note"
     completed: false
+    userId: "3"
   }) {
     id
     name
@@ -98,6 +99,11 @@ query listNotes {
     id
     name
     completed
+    user {
+      id
+      name
+      randomText
+    }
   }
 }
 ```
@@ -118,5 +124,22 @@ subscription onUpdate {
     id
     completed
   }
+}
+```
+
+There's a static list of users:
+
+```
+ {
+    id: 1,
+    name: "User 1"
+},
+{
+    id: 2,
+    name: "User 2"
+},
+{
+    id: 3,
+    name: "Gus"
 }
 ```
