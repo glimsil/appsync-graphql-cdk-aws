@@ -75,12 +75,23 @@ export class InfraStack extends Stack {
         }),
       ],
     });
+    const cloudwatch = new PolicyDocument({
+      statements: [
+        new PolicyStatement({
+          actions: [
+              "cloudwatch:*"
+          ],
+          resources: ["*"] // only notesTable
+        }),
+      ],
+    });
     return new Role(this, `NotesLambdaRole`, {
       roleName: 'NotesLambdaRole',
       description: 'IAM role for NotesLambda',
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
       inlinePolicies: {
-        AccessDdb: accessDdb // add inline policy to IAM Role
+        AccessDdb: accessDdb, // add inline policy to IAM Role
+        CloudWatch: cloudwatch
       }
     });
   }
@@ -103,6 +114,16 @@ export class InfraStack extends Stack {
     this.notesLambdaDataSource.createResolver({
       typeName: "Query",
       fieldName: "getNoteById"
+    });
+
+    this.notesLambdaDataSource.createResolver({
+      typeName: "Note",
+      fieldName: "user"
+    });
+
+    this.notesLambdaDataSource.createResolver({
+      typeName: "User",
+      fieldName: "randomText"
     });
     
     this.notesLambdaDataSource.createResolver({

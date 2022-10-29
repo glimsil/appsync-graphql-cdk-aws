@@ -2,6 +2,13 @@ type Note {
   id: ID!
   name: String!
   completed: Boolean!
+  user: User
+}
+
+type User {
+  id: ID!
+  name: String!
+  randomText: String
 }
 
 input NoteInput {
